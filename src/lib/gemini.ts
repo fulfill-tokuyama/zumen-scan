@@ -75,7 +75,7 @@ export async function analyzeBlueprint(
     if (jsonMatch) {
       parsed = JSON.parse(jsonMatch[1].trim())
     } else {
-      throw new Error("解析結果のJSONパースに失敗しました")
+      throw new Error("JSONパース失敗。応答先頭200文字: " + text.substring(0, 200))
     }
   }
 
