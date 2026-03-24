@@ -38,7 +38,7 @@ export async function analyzeBlueprint(
   mimeType: string
 ): Promise<AnalysisPayload> {
   const response = await getClient().models.generateContent({
-    model: "gemini-2.5-pro",
+    model: "gemini-2.5-flash",
     contents: [
       {
         role: "user",
