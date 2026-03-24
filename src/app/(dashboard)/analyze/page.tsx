@@ -7,10 +7,22 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { DropZone } from "@/components/analyzer/DropZone"
 import { PdfPageSelector } from "@/components/analyzer/PdfPageSelector"
 import { ResultTabs } from "@/components/analyzer/ResultTabs"
+import { BatchProgress } from "@/components/analyzer/BatchProgress"
+import { ZipResultList } from "@/components/analyzer/ZipResultList"
+import { useBatchAnalysis } from "@/hooks/useBatchAnalysis"
 import type { AnalysisResult } from "@/types/analysis"
 import { Loader2 } from "lucide-react"
 
+function isZipFile(file: File): boolean {
+  return (
+    file.type === "application/zip" ||
+    file.type === "application/x-zip-compressed" ||
+    file.name.toLowerCase().endsWith(".zip")
+  )
+}
+
 export default function AnalyzePage() {
+  // Single file state (existing)
   const [file, setFile] = useState<File | null>(null)
   const [pdfPages, setPdfPages] = useState(0)
   const [selectedPage, setSelectedPage] = useState(1)
@@ -18,11 +30,31 @@ export default function AnalyzePage() {
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
+  // ZIP batch state
+  const [isZip, setIsZip] = useState(false)
+  const batch = useBatchAnalysis()
+
   const handleFileSelect = async (selectedFile: File) => {
+    // Reset all state
     setFile(selectedFile)
     setResult(null)
     setPdfPages(0)
     setSelectedPage(1)
+    setPreviewUrl(null)
+    batch.resetBatch()
+
+    if (isZipFile(selectedFile)) {
+      setIsZip(true)
+      try {
+        await batch.handleZipFile(selectedFile)
+        toast.success(`${selectedFile.name} からPDFを抽出しました`)
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "ZIPの展開に失敗しました")
+      }
+      return
+    }
+
+    setIsZip(false)
 
     if (selectedFile.type === "application/pdf") {
       try {
@@ -33,7 +65,6 @@ export default function AnalyzePage() {
         toast.error("PDFの読み込みに失敗しました")
       }
     } else {
-      // Image preview
       const url = URL.createObjectURL(selectedFile)
       setPreviewUrl(url)
     }
@@ -54,10 +85,8 @@ export default function AnalyzePage() {
         const converted = await convertPdfPageToImage(file, selectedPage)
         base64 = converted.base64
         mimeType = converted.mimeType
-        // Create preview from converted image
         setPreviewUrl(`data:${mimeType};base64,${base64}`)
       } else {
-        // Read image as base64
         base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader()
           reader.onload = () => {
@@ -70,9 +99,7 @@ export default function AnalyzePage() {
         mimeType = file.type
       }
 
-      // Send to API
       const formData = new FormData()
-      // Convert base64 to blob for upload
       const byteChars = atob(base64)
       const byteNumbers = new Array(byteChars.length)
       for (let i = 0; i < byteChars.length; i++) {
@@ -98,19 +125,88 @@ export default function AnalyzePage() {
     }
   }
 
+  const handleBatchAnalyze = async () => {
+    try {
+      await batch.startBatchAnalysis()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "バッチ解析に失敗しました")
+    }
+  }
+
   const handleReset = () => {
     setFile(null)
     setResult(null)
     setPdfPages(0)
     setSelectedPage(1)
     setPreviewUrl(null)
+    setIsZip(false)
+    batch.resetBatch()
   }
+
+  const hasZipResults = batch.batchResults.size > 0
 
   return (
     <div className="mx-auto max-w-2xl p-4 md:p-8">
       <h1 className="mb-6 text-2xl font-bold text-slate-100">📐 図面解析</h1>
 
-      {!result ? (
+      {/* === ZIP: Batch analyzing === */}
+      {isZip && batch.isBatchAnalyzing && batch.batchProgress && (
+        <div className="space-y-6">
+          <BatchProgress
+            current={batch.batchProgress.current}
+            total={batch.batchProgress.total}
+            currentFileName={batch.batchProgress.currentFileName}
+            onCancel={batch.cancelBatchAnalysis}
+          />
+        </div>
+      )}
+
+      {/* === ZIP: Results === */}
+      {isZip && hasZipResults && !batch.isBatchAnalyzing && (
+        <div className="space-y-6">
+          <ZipResultList
+            batchResults={batch.batchResults}
+            batchErrors={batch.batchErrors}
+          />
+          <Button
+            onClick={handleReset}
+            variant="outline"
+            className="w-full border-slate-600 text-slate-300 hover:bg-slate-800"
+          >
+            別の図面を解析する
+          </Button>
+        </div>
+      )}
+
+      {/* === ZIP: File selected, not yet analyzing === */}
+      {isZip && !batch.isBatchAnalyzing && !hasZipResults && (
+        <div className="space-y-6">
+          <DropZone onFileSelect={handleFileSelect} isLoading={false} />
+
+          {batch.zipPdfFiles.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-sm text-slate-300">
+                {batch.zipPdfFiles.length}個のPDFが見つかりました:
+              </p>
+              <ul className="space-y-1 text-xs text-slate-400">
+                {batch.zipPdfFiles.map((pdf) => (
+                  <li key={pdf.name}>📄 {pdf.name}</li>
+                ))}
+              </ul>
+              <Button
+                onClick={handleBatchAnalyze}
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3"
+                size="lg"
+              >
+                全PDFを解析する
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* === Single file: No result yet === */}
+      {!isZip && !result && (
         <div className="space-y-6">
           <DropZone onFileSelect={handleFileSelect} isLoading={isLoading} />
 
@@ -146,9 +242,11 @@ export default function AnalyzePage() {
             </div>
           )}
         </div>
-      ) : (
+      )}
+
+      {/* === Single file: Result === */}
+      {!isZip && result && (
         <div className="space-y-6">
-          {/* Preview */}
           {previewUrl && (
             <div className="overflow-hidden rounded-lg border border-slate-700">
               <img
