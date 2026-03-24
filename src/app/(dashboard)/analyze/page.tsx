@@ -14,6 +14,7 @@ import type { AnalysisResult } from "@/types/analysis"
 import { Loader2 } from "lucide-react"
 import { EstimateTab } from "@/components/analyzer/EstimateTab"
 import { useEstimate } from "@/hooks/useEstimate"
+import { downloadEstimateExcel } from "@/lib/estimate-excel"
 
 function isZipFile(file: File): boolean {
   return (
@@ -205,8 +206,9 @@ export default function AnalyzePage() {
             <EstimateTab
               estimate={estimate.estimateResult}
               onDownloadExcel={() => {
-                // Excel download will be implemented in Task 17
-                toast.error("Excel出力は準備中です")
+                if (estimate.estimateResult) {
+                  downloadEstimateExcel(estimate.estimateResult)
+                }
               }}
             />
           )}
@@ -328,7 +330,9 @@ export default function AnalyzePage() {
             <EstimateTab
               estimate={estimate.estimateResult}
               onDownloadExcel={() => {
-                toast.error("Excel出力は準備中です")
+                if (estimate.estimateResult) {
+                  downloadEstimateExcel(estimate.estimateResult)
+                }
               }}
             />
           )}
