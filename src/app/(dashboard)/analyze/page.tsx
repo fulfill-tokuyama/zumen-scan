@@ -12,6 +12,8 @@ import { ZipResultList } from "@/components/analyzer/ZipResultList"
 import { useBatchAnalysis } from "@/hooks/useBatchAnalysis"
 import type { AnalysisResult } from "@/types/analysis"
 import { Loader2 } from "lucide-react"
+import { EstimateTab } from "@/components/analyzer/EstimateTab"
+import { useEstimate } from "@/hooks/useEstimate"
 
 function isZipFile(file: File): boolean {
   return (
@@ -33,6 +35,7 @@ export default function AnalyzePage() {
   // ZIP batch state
   const [isZip, setIsZip] = useState(false)
   const batch = useBatchAnalysis()
+  const estimate = useEstimate()
 
   const handleFileSelect = async (selectedFile: File) => {
     // Reset all state
@@ -141,6 +144,7 @@ export default function AnalyzePage() {
     setPreviewUrl(null)
     setIsZip(false)
     batch.resetBatch()
+    estimate.resetEstimate()
   }
 
   const hasZipResults = batch.batchResults.size > 0
@@ -167,7 +171,46 @@ export default function AnalyzePage() {
           <ZipResultList
             batchResults={batch.batchResults}
             batchErrors={batch.batchErrors}
+            onGenerateIndividualEstimate={(results) => estimate.generateEstimate(results)}
           />
+
+          {/* Estimate buttons */}
+          {!estimate.isEstimating && !estimate.estimateResult && (
+            <div className="space-y-2">
+              <Button
+                onClick={() => {
+                  const allResults = Array.from(batch.batchResults.values()).flat()
+                  estimate.generateEstimate(allResults)
+                }}
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3"
+                size="lg"
+              >
+                💰 統合見積りを生成する
+              </Button>
+            </div>
+          )}
+
+          {/* Estimate loading */}
+          {estimate.isEstimating && (
+            <div className="space-y-4 py-8 text-center">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-amber-500" />
+              <p className="text-sm text-slate-400">
+                見積りを作成中...（30秒程度かかります）
+              </p>
+            </div>
+          )}
+
+          {/* Estimate result */}
+          {estimate.estimateResult && (
+            <EstimateTab
+              estimate={estimate.estimateResult}
+              onDownloadExcel={() => {
+                // Excel download will be implemented in Task 17
+                toast.error("Excel出力は準備中です")
+              }}
+            />
+          )}
+
           <Button
             onClick={handleReset}
             variant="outline"
@@ -258,6 +301,37 @@ export default function AnalyzePage() {
           )}
 
           <ResultTabs result={result} />
+
+          {/* Estimate button */}
+          {!estimate.isEstimating && !estimate.estimateResult && (
+            <Button
+              onClick={() => estimate.generateEstimate([result])}
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-3"
+              size="lg"
+            >
+              💰 見積りを生成する
+            </Button>
+          )}
+
+          {/* Estimate loading */}
+          {estimate.isEstimating && (
+            <div className="space-y-4 py-8 text-center">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-amber-500" />
+              <p className="text-sm text-slate-400">
+                見積りを作成中...（30秒程度かかります）
+              </p>
+            </div>
+          )}
+
+          {/* Estimate result */}
+          {estimate.estimateResult && (
+            <EstimateTab
+              estimate={estimate.estimateResult}
+              onDownloadExcel={() => {
+                toast.error("Excel出力は準備中です")
+              }}
+            />
+          )}
 
           <Button
             onClick={handleReset}
