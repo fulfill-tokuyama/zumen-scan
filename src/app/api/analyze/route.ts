@@ -29,11 +29,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, result })
   } catch (error) {
-    console.error("Analysis error:", error)
+    const message = error instanceof Error ? error.message : String(error)
+    console.error("Analysis error:", message, error)
     return NextResponse.json(
       {
         success: false,
-        error: "解析に失敗しました。もう一度お試しください",
+        error: `解析に失敗しました: ${message}`,
       },
       { status: 500 }
     )

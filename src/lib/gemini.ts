@@ -1,7 +1,13 @@
 import { GoogleGenAI } from "@google/genai"
 import type { AnalysisResult } from "@/types/analysis"
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
+function getClient() {
+  const apiKey = process.env.GEMINI_API_KEY
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY が設定されていません")
+  }
+  return new GoogleGenAI({ apiKey })
+}
 
 const ANALYSIS_SYSTEM_PROMPT = `あなたは建築図面の専門解析AIです。
 1人親方・工務店が現場で使えるよう、図面から以下を正確に読み取ってください。
@@ -31,7 +37,7 @@ export async function analyzeBlueprint(
   imageBase64: string,
   mimeType: string
 ): Promise<AnalysisPayload> {
-  const response = await ai.models.generateContent({
+  const response = await getClient().models.generateContent({
     model: "gemini-2.5-pro",
     contents: [
       {
@@ -80,7 +86,7 @@ export async function askQuestion(
   mimeType: string,
   question: string
 ): Promise<string> {
-  const response = await ai.models.generateContent({
+  const response = await getClient().models.generateContent({
     model: "gemini-2.5-flash",
     contents: [
       {
