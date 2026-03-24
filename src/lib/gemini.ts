@@ -58,6 +58,7 @@ export async function analyzeBlueprint(
     config: {
       systemInstruction: ANALYSIS_SYSTEM_PROMPT,
       maxOutputTokens: 4000,
+      responseMimeType: "application/json",
     },
   })
 
