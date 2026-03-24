@@ -57,8 +57,9 @@ export async function analyzeBlueprint(
     ],
     config: {
       systemInstruction: ANALYSIS_SYSTEM_PROMPT,
-      maxOutputTokens: 4000,
+      maxOutputTokens: 16000,
       responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 1024 },
     },
   })
 
