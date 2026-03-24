@@ -17,8 +17,6 @@ export default function AnalyzePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [imageBase64, setImageBase64] = useState<string | null>(null)
-  const [imageMimeType, setImageMimeType] = useState<string | null>(null)
 
   const handleFileSelect = async (selectedFile: File) => {
     setFile(selectedFile)
@@ -72,9 +70,6 @@ export default function AnalyzePage() {
         mimeType = file.type
       }
 
-      setImageBase64(base64)
-      setImageMimeType(mimeType)
-
       // Send to API
       const formData = new FormData()
       // Convert base64 to blob for upload
@@ -109,8 +104,6 @@ export default function AnalyzePage() {
     setPdfPages(0)
     setSelectedPage(1)
     setPreviewUrl(null)
-    setImageBase64(null)
-    setImageMimeType(null)
   }
 
   return (
@@ -166,11 +159,7 @@ export default function AnalyzePage() {
             </div>
           )}
 
-          <ResultTabs
-            result={result}
-            imageBase64={imageBase64 ?? undefined}
-            mimeType={imageMimeType ?? undefined}
-          />
+          <ResultTabs result={result} />
 
           <Button
             onClick={handleReset}

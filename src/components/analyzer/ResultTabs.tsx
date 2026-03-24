@@ -10,13 +10,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { QuestionChat } from "./QuestionChat"
 import type { AnalysisResult } from "@/types/analysis"
 
 type ResultTabsProps = {
   result: AnalysisResult
-  imageBase64?: string
-  mimeType?: string
 }
 
 function EmptyState() {
@@ -27,7 +24,7 @@ function EmptyState() {
   )
 }
 
-export function ResultTabs({ result, imageBase64, mimeType }: ResultTabsProps) {
+export function ResultTabs({ result }: ResultTabsProps) {
   const totalArea = result.areas.reduce(
     (sum, a) => sum + (parseFloat(a.value) || 0),
     0
@@ -203,10 +200,6 @@ export function ResultTabs({ result, imageBase64, mimeType }: ResultTabsProps) {
         </TabsContent>
       </Tabs>
 
-      {/* Question Chat */}
-      {imageBase64 && mimeType && (
-        <QuestionChat imageBase64={imageBase64} mimeType={mimeType} />
-      )}
     </div>
   )
 }

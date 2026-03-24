@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { analyzeBlueprint, askQuestion } from "@/lib/gemini"
+import { analyzeBlueprint } from "@/lib/gemini"
 import { randomUUID } from "crypto"
 
 export async function POST(request: NextRequest) {
@@ -36,29 +36,6 @@ export async function POST(request: NextRequest) {
         success: false,
         error: `解析に失敗しました: ${message}`,
       },
-      { status: 500 }
-    )
-  }
-}
-
-// PUT for question chat
-export async function PUT(request: NextRequest) {
-  try {
-    const { imageBase64, mimeType, question } = await request.json()
-
-    if (!imageBase64 || !mimeType || !question) {
-      return NextResponse.json(
-        { error: "imageBase64, mimeType, questionが必要です" },
-        { status: 400 }
-      )
-    }
-
-    const answer = await askQuestion(imageBase64, mimeType, question)
-    return NextResponse.json({ answer })
-  } catch (error) {
-    console.error("Question error:", error)
-    return NextResponse.json(
-      { error: "回答の取得に失敗しました" },
       { status: 500 }
     )
   }
