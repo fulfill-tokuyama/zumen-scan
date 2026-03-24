@@ -15,9 +15,11 @@ const ACCEPTED_TYPES = {
   "image/gif": [".gif"],
   "image/webp": [".webp"],
   "application/pdf": [".pdf"],
+  "application/zip": [".zip"],
+  "application/x-zip-compressed": [".zip"],
 }
 
-const MAX_SIZE = 20 * 1024 * 1024 // 20MB
+const MAX_SIZE = 100 * 1024 * 1024 // 100MB
 
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
@@ -90,7 +92,7 @@ export function DropZone({ onFileSelect, isLoading }: DropZoneProps) {
           <p className="text-sm font-medium text-slate-200">
             図面をアップロード
           </p>
-          <p className="text-xs text-slate-400">JPG / PNG / PDF 対応</p>
+          <p className="text-xs text-slate-400">JPG / PNG / PDF / ZIP 対応</p>
         </div>
       )}
     </div>
